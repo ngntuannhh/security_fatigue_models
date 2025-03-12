@@ -20,45 +20,58 @@ class SecurityEnv(gym.Env):
     """
     metadata = {'render_modes': ['human']}
 
-    # Define feature types and ranges as class variables
+    # Define feature types and their ranges
     FEATURE_TYPES = {
-        'Level of familiarity with cybersecurity practices': 'categorical',  # 0, 1, 2
-        'Frequency of Password Changes': 'ordinal',  # 1-5
-        'Difficulty Level': 'ordinal',  # 1-5
-        'Effort Required': 'ordinal',  # 1-5
-        'Perceived Importance': 'ordinal',  # 1-5
-        'Frequency of MFA prompts': 'ordinal',  # 1-5
-        'Difficulty Level MFA': 'ordinal',  # 1-5
-        'Effort Required MFA': 'ordinal',  # 1-5
-        'Perceived Importance of MFA': 'ordinal',  # 1-5
-        'Frequency of Security Warnings': 'ordinal',  # 1-5
-        'Difficulty Level Security Warnings': 'ordinal',  # 1-5
-        'Effort Required Security Warnings': 'ordinal',  # 1-5
-        'Perceived Importance of Security Warnings': 'ordinal',  # 1-5
-        'Which types of MFA do you encounter most often? (Select all that apply)_Authentication app': 'binary',
-        'Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification': 'binary',
+        'Level of familiarity with cybersecurity practices': 'categorical',
+        'Frequency of Password Changes': 'categorical',
+        'Difficulty Level': 'categorical',
+        'Effort Required': 'categorical',
+        'Perceived Importance': 'categorical',
+        'Frequency of MFA prompts': 'categorical',
+        'Difficulty Level MFA': 'categorical',
+        'Effort Required MFA': 'categorical',
+        'Perceived Importance of MFA': 'categorical',
+        'Frequency of Security Warnings': 'categorical',
+        'Difficulty Level Security Warnings': 'categorical',
+        'Effort Required Security Warnings': 'categorical',
+        'Perceived Importance of Security Warnings': 'categorical',
+        'Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)': 'binary',
+        'Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)': 'binary',
         'Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA': 'binary',
         'Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email': 'binary',
-        'Which types of Security Warnings do you encounter most often? (Select all that apply)_Email notifications': 'binary',
-        'Which types of Security Warnings do you encounter most often? (Select all that apply)_In-app notifications': 'binary',
-        'Which types of Security Warnings do you encounter most often? (Select all that apply)_Pop-up alerts': 'binary',
-        'Which types of Security Warnings do you encounter most often? (Select all that apply)_SMS notifications': 'binary'
+        'Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token': 'binary',
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications': 'binary',
+        'Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications': 'binary',
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings': 'binary',
+        'Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts': 'binary',
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts': 'binary'
     }
 
+    # Define feature ranges based on the dataset
     FEATURE_RANGES = {
-        'Level of familiarity with cybersecurity practices': (0, 2),
-        'Frequency of Password Changes': (1, 5),
-        'Difficulty Level': (1, 5),
-        'Effort Required': (1, 5),
-        'Perceived Importance': (1, 5),
-        'Frequency of MFA prompts': (1, 5),
-        'Difficulty Level MFA': (1, 5),
-        'Effort Required MFA': (1, 5),
-        'Perceived Importance of MFA': (1, 5),
-        'Frequency of Security Warnings': (1, 5),
-        'Difficulty Level Security Warnings': (1, 5),
-        'Effort Required Security Warnings': (1, 5),
-        'Perceived Importance of Security Warnings': (1, 5)
+        'Level of familiarity with cybersecurity practices': [0, 1, 2],  # Beginner, Intermediate, Advanced
+        'Frequency of Password Changes': [1, 2, 3, 4, 5],  # Daily to Annually
+        'Difficulty Level': [1, 2, 3, 4, 5],  # Very easy to Very difficult
+        'Effort Required': [1, 2, 3, 4, 5],  # No effort to Very high effort
+        'Perceived Importance': [1, 2, 3, 4, 5],  # Not important to Very important
+        'Frequency of MFA prompts': [1, 2, 3, 4, 5],  # Daily to Annually
+        'Difficulty Level MFA': [1, 2, 3, 4, 5],  # Very easy to Very difficult
+        'Effort Required MFA': [1, 2, 3, 4, 5],  # No effort to Very high effort
+        'Perceived Importance of MFA': [1, 2, 3, 4, 5],  # Not important to Very important
+        'Frequency of Security Warnings': [1, 2, 3, 4, 5],  # Daily to Annually
+        'Difficulty Level Security Warnings': [1, 2, 3, 4, 5],  # Very easy to Very difficult
+        'Effort Required Security Warnings': [1, 2, 3, 4, 5],  # No effort to Very high effort
+        'Perceived Importance of Security Warnings': [1, 2, 3, 4, 5],  # Not important to Very important
+        'Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)': [0, 1],
+        'Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)': [0, 1],
+        'Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA': [0, 1],
+        'Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email': [0, 1],
+        'Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token': [0, 1],
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications': [0, 1],
+        'Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications': [0, 1],
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings': [0, 1],
+        'Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts': [0, 1],
+        'Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts': [0, 1]
     }
 
     def __init__(self,
@@ -71,9 +84,9 @@ class SecurityEnv(gym.Env):
         super(SecurityEnv, self).__init__()
 
         # Initialize feature names and types
+        self.feature_names = list(self.FEATURE_TYPES.keys())
         self.feature_types = self.FEATURE_TYPES
         self.feature_ranges = self.FEATURE_RANGES
-        self.feature_names = list(self.FEATURE_TYPES.keys())
         self.num_features = len(self.feature_names)
 
         # Load the trained Random Forest model
@@ -96,12 +109,19 @@ class SecurityEnv(gym.Env):
         self.max_steps = max_steps
         self.current_step = 0
 
-        # Define the action space: one discrete value per feature (values 0, 1, or 2)
-        self.action_space = spaces.MultiDiscrete([3] * self.num_features)
+        # Define the action space: one discrete value per feature
+        action_space = []
+        for feature_name in self.feature_names:
+            if self.feature_types[feature_name] == 'binary':
+                action_space.append(2)  # 0 or 1
+            else:
+                # Use the length of the feature range for categorical features
+                action_space.append(len(self.feature_ranges[feature_name]))
+        self.action_space = spaces.MultiDiscrete(action_space)
 
         # Define the observation space: configuration vector plus predicted fatigue and security score
         low_features = [0] * self.num_features
-        high_features = [2] * self.num_features
+        high_features = [max(len(self.feature_ranges[name]) - 1 for name in self.feature_names)] * self.num_features
         low_extra = [0.0, 0.0]  # predicted fatigue and security score lower bounds
         high_extra = [10.0, 2 * self.num_features]  # example upper bounds
         self.observation_space = spaces.Box(
@@ -119,21 +139,16 @@ class SecurityEnv(gym.Env):
         return float(np.sum(config))
 
     def _map_action_to_feature_range(self, action: int, feature_name: str) -> float:
-        """Map discrete action (0,1,2) to actual feature range based on feature type."""
-        feature_type = self.feature_types.get(feature_name, 'ordinal')
+        """Map discrete action to actual feature value based on feature type."""
+        feature_type = self.feature_types.get(feature_name, 'categorical')
+        feature_range = self.feature_ranges.get(feature_name, [0, 1, 2, 3, 4])
         
         if feature_type == 'binary':
-            return float(action >= 1)  # Convert to 0 or 1
-        elif feature_type == 'categorical':
-            return float(action)  # Keep as 0, 1, or 2
-        else:  # ordinal (1-5)
-            min_val, max_val = self.feature_ranges.get(feature_name, (1, 5))
-            if action == 0:
-                return min_val
-            elif action == 1:
-                return (min_val + max_val) / 2
-            else:  # action == 2
-                return max_val
+            return float(action)  # 0 or 1
+        else:  # categorical
+            # Ensure action is within valid range
+            action = min(action, len(feature_range) - 1)
+            return float(feature_range[action])  # Map action index to actual value
 
     def _predict_fatigue_score(self, config: np.ndarray) -> float:
         """Predict fatigue score using the RF model."""
@@ -162,7 +177,7 @@ class SecurityEnv(gym.Env):
         Execute one step in the environment.
         
         Args:
-            action: Array of discrete values (0, 1, or 2) for each feature
+            action: Array of discrete values for each feature
             
         Returns:
             tuple: (observation, reward, terminated, truncated, info)
@@ -211,7 +226,14 @@ class SecurityEnv(gym.Env):
         self.current_step = 0
         
         # Generate random initial configuration
-        config = self.np_random.integers(0, 3, size=(self.num_features,))
+        config = np.zeros(self.num_features, dtype=np.int64)
+        for i, feature_name in enumerate(self.feature_names):
+            if self.feature_types[feature_name] == 'binary':
+                config[i] = self.np_random.integers(0, 2)
+            else:
+                # Use the length of the feature range for categorical features
+                config[i] = self.np_random.integers(0, len(self.feature_ranges[feature_name]))
+        
         s_total = self._compute_security_score(config)
         afs = self._predict_fatigue_score(config)
         
