@@ -135,8 +135,28 @@ class SecurityEnv(gym.Env):
         self.render_mode = render_mode
 
     def _compute_security_score(self, config: np.ndarray) -> float:
-        """Compute security score as the sum of feature values."""
-        return float(np.sum(config))
+        """Compute security score using weighted sum of specific features."""
+        weights = {
+            # MFA weights
+            "Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)": 2,
+            "Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)": 3,
+            "Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA": 0,
+            "Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email": 2,
+            "Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token": 4,
+            # Security Warnings weights
+            "Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications": 2,
+            "Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications": 0,
+            "Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings": 2,
+            "Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts": 2,
+            "Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts": 3
+        }
+        
+        score = 0.0
+        for i, feature_name in enumerate(self.feature_names):
+            if feature_name in weights:
+                value = self._map_action_to_feature_range(config[i], feature_name)
+                score += value * weights[feature_name]
+        return score
 
     def _map_action_to_feature_range(self, action: int, feature_name: str) -> float:
         """Map discrete action to actual feature value based on feature type."""
