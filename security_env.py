@@ -76,9 +76,9 @@ class SecurityEnv(gym.Env):
 
     def __init__(self,
                  rf_model_path: str = "fatigue_model.joblib",
-                 alpha: float = 0.7,
-                 beta: float = 0.3,
-                 s_min: float = 5.0,
+                 alpha: float = 0.3,
+                 beta: float = 0.7,
+                 s_min: float = 8.0,
                  max_steps: int = 100,
                  render_mode: str = None):
         super(SecurityEnv, self).__init__()
@@ -121,9 +121,9 @@ class SecurityEnv(gym.Env):
 
         # Define the observation space: configuration vector plus predicted fatigue and security score
         low_features = [0] * self.num_features
-        high_features = [max(len(self.feature_ranges[name]) - 1 for name in self.feature_names)] * self.num_features
+        high_features = [len(self.feature_ranges[name]) - 1 for name in self.feature_names]
         low_extra = [0.0, 0.0]  # predicted fatigue and security score lower bounds
-        high_extra = [10.0, 2 * self.num_features]  # example upper bounds
+        high_extra = [100.0, 20.0]  # upper bounds
         self.observation_space = spaces.Box(
             np.array(low_features + low_extra, dtype=np.float32),
             np.array(high_features + high_extra, dtype=np.float32),
@@ -269,6 +269,40 @@ class SecurityEnv(gym.Env):
         }
         
         return self.state, info
+
+    # In security_env.py
+    def reset_with_user_config(self, user_config: np.ndarray):
+        """
+        Reset the environment to a user-supplied configuration instead of random.
+        user_config: a numpy array of length self.num_features,
+                    each entry is an integer index for that feature.
+        """
+        self.current_step = 0
+
+        # Validate that user_config length matches the environment's features
+        if len(user_config) != self.num_features:
+            raise ValueError("User config must have length {}".format(self.num_features))
+
+        # Clip or adjust user_config so it doesn't exceed the valid range
+        config = np.zeros(self.num_features, dtype=np.int64)
+        for i, feature_name in enumerate(self.feature_names):
+            max_index = len(self.feature_ranges[feature_name]) - 1
+            config[i] = min(user_config[i], max_index)
+
+        s_total = self._compute_security_score(config)
+        afs = self._predict_fatigue_score(config)
+
+        self.state = np.array(list(config) + [afs, s_total], dtype=np.float32)
+
+        info = {
+            'security_score': s_total,
+            'fatigue_score': afs,
+            'step': self.current_step,
+            'feature_values': self._get_feature_values(config)
+        }
+        return self.state, info
+
+
 
     def render(self) -> None:
         """Render the environment to the screen."""
