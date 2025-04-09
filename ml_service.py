@@ -31,7 +31,7 @@ def suggest():
         config_vector = np.array(config_vector)
 
         # Get model suggestion
-        suggestion = suggest_config_for_user(config_vector)
+        suggestion = suggest_config_for_user(config_vector, r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\best_model\best_model.zip', 10)
         
         # Convert NumPy types to JSON serializable Python types
         serializable_suggestion = convert_to_serializable(suggestion)

@@ -162,13 +162,17 @@ class SecurityEnv(gym.Env):
         """Map discrete action to actual feature value based on feature type."""
         feature_type = self.feature_types.get(feature_name, 'categorical')
         feature_range = self.feature_ranges.get(feature_name, [0, 1, 2, 3, 4])
-        
+
+        # Explicit rounding and clamping
+        index = int(round(action))  # ensures float like 0.0 is safe
+        index = min(index, len(feature_range) - 1)
+        index = max(index, 0)
+
         if feature_type == 'binary':
-            return float(action)  # 0 or 1
-        else:  # categorical
-            # Ensure action is within valid range
-            action = min(action, len(feature_range) - 1)
-            return float(feature_range[action])  # Map action index to actual value
+            return float(index)  # just 0 or 1
+        else:
+            return float(feature_range[index])
+
 
     def _predict_fatigue_score(self, config: np.ndarray) -> float:
         """Predict fatigue score using the RF model."""
