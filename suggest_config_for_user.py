@@ -39,31 +39,37 @@ def suggest_config_for_user(user_config: np.ndarray,
     if final_obs is None:
         raise RuntimeError("Model did not perform any step; final state is undefined.")
     
-   # The 'obs' now contains the final state after n_steps, i.e. the final config + [afs, security]
+    # The 'obs' now contains the final state after n_steps, i.e. the final config + [afs, security]
     final_config = obs[:-2]  # everything except the last two (fatigue, security)
     predicted_fatigue = obs[-2]
     security_score = obs[-1]
     
-    # Convert final_config to integers before passing to _get_feature_values
-    final_config_int = final_config.astype(np.int64)
-    # Convert final_config from indexes back to meaningful feature values
-    feature_values = env._get_feature_values(final_config_int)
+    # Convert final_config to integers for compact representation
+    final_config_int = np.round(final_config).astype(np.int64).tolist()
     
-    # ✅ DEBUG: mapping verification
-    print("\n🔎 Mapping Check: Index → Value")
-    for i, feature in enumerate(env.feature_names):
-        idx = int(round(final_config[i]))
-        expected = env.feature_ranges[feature][idx]
-        actual = feature_values[feature]
-        print(f"{feature}: Index = {idx}, Mapped = {expected}, FeatureValue = {actual}, Match = {expected == actual}")
-
+    # Create a compact response with just the essential information
     suggestion = {
-        #"final_config": final_config,
-        "feature_values": feature_values,
-        "predicted_fatigue": float(predicted_fatigue),
-        "security_score": float(security_score),
-        "steps_taken": step + 1
+        "optimized_config": final_config_int,  # The configuration as integers
+        "fatigue": float(predicted_fatigue),
+        "security": float(security_score),
+        "steps": step + 1
     }
+    
+    # Optional: For debugging, you can still generate the detailed feature values
+    if False:  # Set to True for debugging
+        # Convert final_config to integers before passing to _get_feature_values
+        final_config_int_arr = final_config.astype(np.int64)
+        # Convert final_config from indexes back to meaningful feature values
+        feature_values = env._get_feature_values(final_config_int_arr)
+        
+        print("\n🔎 Mapping Check: Index → Value")
+        for i, feature in enumerate(env.feature_names):
+            idx = int(round(final_config[i]))
+            expected = env.feature_ranges[feature][idx]
+            actual = feature_values[feature]
+            print(f"{feature}: Index = {idx}, Mapped = {expected}, FeatureValue = {actual}, Match = {expected == actual}")
+        
+        suggestion["feature_values"] = feature_values
     
     return suggestion
 
