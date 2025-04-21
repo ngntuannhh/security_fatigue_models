@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
 import numpy as np
+import subprocess
+import json
+import os
 from suggest_config_for_user import suggest_config_for_user  # Assuming this is your model function
 
 app = Flask(__name__)
@@ -23,9 +26,9 @@ def suggest():
         data = request.get_json()
 
         # Extract config vector from the JSON payload
-        config_vector = data.get("config_vector")
-        if config_vector is None:
-            return jsonify({"error": "Missing config_vector"}), 400
+        config_vector = data.get("configVector")
+        # if config_vector is None:
+        #     return jsonify({"error": "Missing config_vector"}), 400
 
         # Convert to NumPy array
         config_vector = np.array(config_vector)
@@ -43,5 +46,36 @@ def suggest():
         print(f"Error in suggestion endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/retrain', methods=['POST'])
+def retrain():
+    try:
+        # Get feedback data from request
+        feedback_data = request.get_json()
+        
+        if not feedback_data or not isinstance(feedback_data, list):
+            return "ERROR", 400
+        
+        # Define the feedback file path
+        feedback_file = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\feedback_buffer.jsonl'
+        
+        # Save the feedback data to a JSONL file
+        with open(feedback_file, 'w') as f:
+            for entry in feedback_data:
+                f.write(json.dumps(entry) + '\n')
+        
+        # Use Popen to run the training in the background
+        subprocess.Popen(["python", 
+                       r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\train_agent.py", 
+                       "--retrain_from_feedback"], 
+                      shell=True, 
+                      creationflags=subprocess.CREATE_NO_WINDOW)
+        
+        # Return a simple "OK" response
+        return "OK", 200
+            
+    except Exception as e:
+        print(f"Error in retraining endpoint: {e}")
+        return "ERROR", 500
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
