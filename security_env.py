@@ -1,7 +1,6 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-import joblib
 import pandas as pd
 from typing import Tuple, Dict, Any, List
 
@@ -22,60 +21,64 @@ class SecurityEnv(gym.Env):
 
     # Define feature types and their ranges
     FEATURE_TYPES = {
-        'Level of familiarity with cybersecurity practices': 'categorical',
+        'Familarity': 'categorical',
+
         'Frequency of Password Changes': 'categorical',
-        'Difficulty Level': 'categorical',
-        'Effort Required': 'categorical',
-        'Perceived Importance': 'categorical',
+        'Difficulty Level Password': 'categorical',
+        'Effort Required Password': 'categorical',
+        'Perceived Importance Password': 'categorical',
+        'Password Uniqueness': 'categorical',
+
         'Frequency of MFA prompts': 'categorical',
         'Difficulty Level MFA': 'categorical',
         'Effort Required MFA': 'categorical',
         'Perceived Importance of MFA': 'categorical',
+
         'Frequency of Security Warnings': 'categorical',
         'Difficulty Level Security Warnings': 'categorical',
         'Effort Required Security Warnings': 'categorical',
         'Perceived Importance of Security Warnings': 'categorical',
-        'Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)': 'binary',
-        'Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)': 'binary',
-        'Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA': 'binary',
-        'Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email': 'binary',
-        'Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token': 'binary',
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications': 'binary',
-        'Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications': 'binary',
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings': 'binary',
-        'Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts': 'binary',
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts': 'binary'
+        'Warnings Response Behaviour': 'categorical',
+
+        'Hardware security key (FIDO2 token) or cryptographic device': 'binary',
+        'On-device prompt or biometric': 'binary',
+        'OTP via authenticator app': 'binary',
+        'OTP via SMS/email': 'binary',
+        'Secondary email/phone or security questions': 'binary',
+        'No MFA enabled': 'binary'
     }
 
     # Define feature ranges based on the dataset
     FEATURE_RANGES = {
-        'Level of familiarity with cybersecurity practices': [0, 1, 2],  # Beginner, Intermediate, Advanced
-        'Frequency of Password Changes': [1, 2, 3, 4, 5],  # Daily to Annually
-        'Difficulty Level': [1, 2, 3, 4, 5],  # Very easy to Very difficult
-        'Effort Required': [1, 2, 3, 4, 5],  # No effort to Very high effort
-        'Perceived Importance': [1, 2, 3, 4, 5],  # Not important to Very important
-        'Frequency of MFA prompts': [1, 2, 3, 4, 5],  # Daily to Annually
+        #Familiarity with cybersecurity practices
+        'Familarity': [0, 1, 2],  # Beginner, Intermediate, Advanced
+        #Password
+        'Frequency of Password Changes': [1, 2, 3, 4, 5],  # Annually to Daily
+        'Difficulty Level Password': [1, 2, 3, 4, 5],  # Very easy to Very difficult
+        'Effort Required Password': [1, 2, 3, 4, 5],  # No effort to Very high effort
+        'Perceived Importance Password': [1, 2, 3, 4, 5],  # Not important to Very important
+        'Password Uniqueness': [0.2, 0.5, 0.8, 1.0],  # Not unique to Very unique
+        #MFA
+        'Frequency of MFA prompts': [1, 2, 3, 4, 5],  # Annually to Daily
         'Difficulty Level MFA': [1, 2, 3, 4, 5],  # Very easy to Very difficult
         'Effort Required MFA': [1, 2, 3, 4, 5],  # No effort to Very high effort
         'Perceived Importance of MFA': [1, 2, 3, 4, 5],  # Not important to Very important
-        'Frequency of Security Warnings': [1, 2, 3, 4, 5],  # Daily to Annually
+        #Warnings
+        'Frequency of Security Warnings': [1, 2, 3, 4, 5],  # Annually to Daily
         'Difficulty Level Security Warnings': [1, 2, 3, 4, 5],  # Very easy to Very difficult
         'Effort Required Security Warnings': [1, 2, 3, 4, 5],  # No effort to Very high effort
         'Perceived Importance of Security Warnings': [1, 2, 3, 4, 5],  # Not important to Very important
-        'Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)': [0, 1],
-        'Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)': [0, 1],
-        'Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA': [0, 1],
-        'Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email': [0, 1],
-        'Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token': [0, 1],
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications': [0, 1],
-        'Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications': [0, 1],
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings': [0, 1],
-        'Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts': [0, 1],
-        'Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts': [0, 1]
+        'Warnings Response Behaviour': [20, 40, 60, 80, 100],
+        #MFA Types & warnings types (binary)
+        'Hardware security key (FIDO2 token) or cryptographic device': [0, 1],
+        'On-device prompt or biometric': [0, 1],
+        'OTP via authenticator app': [0, 1],
+        'OTP via SMS/email': [0, 1],
+        'Secondary email/phone or security questions': [0, 1],
+        'No MFA enabled': [0, 1]
     }
 
     def __init__(self,
-                 rf_model_path: str = "fatigue_model.joblib",
                  alpha: float = 0.3,
                  beta: float = 0.7,
                  s_min: float = 8.0,
@@ -89,18 +92,13 @@ class SecurityEnv(gym.Env):
         self.feature_ranges = self.FEATURE_RANGES
         self.num_features = len(self.feature_names)
 
-        # Load the trained Random Forest model
-        try:
-            self.fatigue_model = joblib.load(rf_model_path)
-            # Verify that model features match our defined features
-            model_features = self.fatigue_model.feature_names_in_
-            if not all(f in self.feature_names for f in model_features):
-                print("Warning: Model features don't match defined features!")
-                print("Model features:", model_features)
-                print("Defined features:", self.feature_names)
-        except Exception as e:
-            print(f"Error loading model: {e}")
-            print("Using default feature configuration...")
+         # Debug: print feature names
+        print("Feature names:", self.feature_names)
+    
+        # Debug: check for missing keys in FEATURE_RANGES
+        missing_keys = [name for name in self.feature_names if name not in self.FEATURE_RANGES]
+        if missing_keys:
+            print("WARNING: These feature names are missing from FEATURE_RANGES:", missing_keys)
 
         # RL hyperparameters
         self.alpha = alpha
@@ -123,7 +121,7 @@ class SecurityEnv(gym.Env):
         low_features = [0] * self.num_features
         high_features = [len(self.feature_ranges[name]) - 1 for name in self.feature_names]
         low_extra = [0.0, 0.0]  # predicted fatigue and security score lower bounds
-        high_extra = [100.0, 20.0]  # upper bounds
+        high_extra = [100.0, 100.0]  # upper bounds
         self.observation_space = spaces.Box(
             np.array(low_features + low_extra, dtype=np.float32),
             np.array(high_features + high_extra, dtype=np.float32),
@@ -136,27 +134,77 @@ class SecurityEnv(gym.Env):
 
     def _compute_security_score(self, config: np.ndarray) -> float:
         """Compute security score using weighted sum of specific features."""
-        weights = {
-            # MFA weights
-            "Which types of MFA do you encounter most often? (Select all that apply)_Authentication app (e.g., Google Authenticator, Microsoft Authenticator)": 2,
-            "Which types of MFA do you encounter most often? (Select all that apply)_Biometric verification (fingerprint, facial recognition)": 3,
-            "Which types of MFA do you encounter most often? (Select all that apply)_I do not use MFA": 0,
-            "Which types of MFA do you encounter most often? (Select all that apply)_One-time passwords (OTP) via SMS or email": 2,
-            "Which types of MFA do you encounter most often? (Select all that apply)_Security key or hardware token": 4,
-            # Security Warnings weights
-            "Which types of security warnings do you encounter most often? (Select all that apply)_Antivirus/Malware Notifications": 2,
-            "Which types of security warnings do you encounter most often? (Select all that apply)_I do not encounter any warnings/notifications": 0,
-            "Which types of security warnings do you encounter most often? (Select all that apply)_Phishing Warnings": 2,
-            "Which types of security warnings do you encounter most often? (Select all that apply)_System Update Alerts": 2,
-            "Which types of security warnings do you encounter most often? (Select all that apply)_Unauthorized Access Attempts": 3
+        """Formula = S_pass * W_pass + S_mfa * W_mfa + S_war * W_war"""
+        # Define weights for each component
+        W_pass = 0.3
+        W_mfa = 0.5
+        W_war = 0.2
+        
+        # Get indices of key features for direct access
+        difficulty_password_idx = self.feature_names.index('Difficulty Level Password')
+        password_uniqueness_idx = self.feature_names.index('Password Uniqueness')
+        mfa_frequency_idx = self.feature_names.index('Frequency of MFA prompts')
+        warnings_response_idx = self.feature_names.index('Warnings Response Behaviour')
+        
+        # 1. Calculate Password Security Score
+        password_difficulty_map = {
+            1: 20,  # Very easy -> 20
+            2: 40,  # Easy -> 40
+            3: 60,  # Moderate -> 60
+            4: 80,  # Difficult -> 80
+            5: 100  # Very difficult -> 100
         }
         
-        score = 0.0
-        for i, feature_name in enumerate(self.feature_names):
-            if feature_name in weights:
-                value = self._map_action_to_feature_range(config[i], feature_name)
-                score += value * weights[feature_name]
-        return score
+        # Get mapped difficulty and uniqueness values
+        difficulty_value = self._map_action_to_feature_range(config[difficulty_password_idx], 'Difficulty Level Password')
+        uniqueness_value = self._map_action_to_feature_range(config[password_uniqueness_idx], 'Password Uniqueness')
+        
+        # Calculate S_pass
+        S_pass = password_difficulty_map.get(difficulty_value, 0) * uniqueness_value
+        
+        # 2. Calculate MFA Security Score
+        mfa_frequency_map = {
+            1: 0.2,    # annually -> 100%
+            2: 0.5,  # Weekly -> 90%
+            3: 0.75,  # Monthly -> 75%
+            4: 0.9,  # Quarterly -> 50%
+            5: 1   # daily -> 20%
+        }
+        
+        # Get MFA frequency factor
+        frequency_value = self._map_action_to_feature_range(config[mfa_frequency_idx], 'Frequency of MFA prompts')
+        frequency_factor = mfa_frequency_map.get(frequency_value, 0.5)
+        
+        # MFA type weights
+        mfa_weights = {
+            'Hardware security key (FIDO2 token) or cryptographic device': 100,
+            'On-device prompt or biometric': 90,
+            'OTP via authenticator app': 80,
+            'OTP via SMS/email': 70,
+            'Secondary email/phone or security questions': 40,
+            'No MFA enabled': 0
+        }
+        
+        # Calculate S_MFA
+        S_MFA = 0
+        max_mfa_score = 0
+        for mfa_type, weight in mfa_weights.items():
+            if mfa_type in self.feature_names:
+                idx = self.feature_names.index(mfa_type)
+                is_enabled = self._map_action_to_feature_range(config[idx], mfa_type)
+                if is_enabled == 1 and weight > max_mfa_score:
+                    max_mfa_score = weight
+        
+        # Apply frequency factor to MFA score
+        S_MFA = max_mfa_score * frequency_factor
+        
+        # 3. Calculate Warning Response Security Score
+        S_war = self._map_action_to_feature_range(config[warnings_response_idx], 'Warnings Response Behaviour')
+        
+        # Combined security score
+        security_score = W_pass * S_pass + W_mfa * S_MFA + W_war * S_war
+        
+        return security_score
 
     def _map_action_to_feature_range(self, action: int, feature_name: str) -> float:
         """Map discrete action to actual feature value based on feature type."""
@@ -174,20 +222,84 @@ class SecurityEnv(gym.Env):
             return float(feature_range[index])
 
 
-    def _predict_fatigue_score(self, config: np.ndarray) -> float:
-        """Predict fatigue score using the RF model."""
+    def _compute_fatigue_score(self, config: np.ndarray) -> float:
+        """
+        Calculate fatigue score using the formula:
+        Fatigue Score = (Frequency × Difficulty × Effort) / (Importance × (1 + 0.5 × (Familiarity / 2)))
+        
+        This is calculated for each security measure (password, MFA, warnings) and then combined.
+        """
         try:
-            # Map discrete actions to actual feature values
-            feature_values = []
+            # Get feature values from configuration
+            feature_values = {}
             for i, feature_name in enumerate(self.feature_names):
-                feature_values.append(self._map_action_to_feature_range(config[i], feature_name))
-
-            # Create DataFrame with proper feature names
-            X = pd.DataFrame([feature_values], columns=self.feature_names)
-            return self.fatigue_model.predict(X)[0]
+                feature_values[feature_name] = self._map_action_to_feature_range(config[i], feature_name)
+            
+            # Get familiarity value (common to all calculations)
+            familiarity = feature_values.get('Familarity', 1)  # Default to intermediate (1) if not found
+            familiarity_factor = 1 + 0.5 * (familiarity / 2)
+            
+            # Calculate Password Fatigue
+            password_fatigue = 0
+            try:
+                password_freq = feature_values['Frequency of Password Changes']
+                password_diff = feature_values['Difficulty Level Password']
+                password_effort = feature_values['Effort Required Password']
+                password_importance = feature_values['Perceived Importance Password']
+                
+                if password_importance > 0:  # Avoid division by zero
+                    password_fatigue = (password_freq * password_diff * password_effort) / (password_importance)
+            except Exception as e:
+                print(f"Error calculating password fatigue: {e}")
+            
+            # Calculate MFA Fatigue
+            mfa_fatigue = 0
+            try:
+                # Only calculate MFA fatigue if MFA is enabled
+                mfa_enabled = (
+                    feature_values.get('Hardware security key (FIDO2 token) or cryptographic device', 0) or
+                    feature_values.get('On-device prompt or biometric', 0) or
+                    feature_values.get('OTP via authenticator app', 0) or
+                    feature_values.get('OTP via SMS/email', 0) or
+                    feature_values.get('Secondary email/phone or security questions', 0)
+                )
+                
+                if mfa_enabled and feature_values.get('No MFA enabled', 0) == 0:
+                    mfa_freq = feature_values.get('Frequency of MFA prompts', 3)
+                    mfa_diff = feature_values.get('Difficulty Level MFA', 3) 
+                    mfa_effort = feature_values.get('Effort Required MFA', 3)
+                    mfa_importance = feature_values.get('Perceived Importance of MFA', 3)
+                    
+                    if mfa_importance > 0:  # Avoid division by zero
+                        mfa_fatigue = (mfa_freq * mfa_diff * mfa_effort) / (mfa_importance)
+            except Exception as e:
+                print(f"Error calculating MFA fatigue: {e}")
+            
+            # Calculate Warnings Fatigue
+            warnings_fatigue = 0
+            try:
+                warnings_freq = feature_values.get('Frequency of Security Warnings', 3)
+                warnings_diff = feature_values.get('Difficulty Level Security Warnings', 3)
+                warnings_effort = feature_values.get('Effort Required Security Warnings', 3)
+                warnings_importance = feature_values.get('Perceived Importance of Security Warnings', 3)
+                
+                if warnings_importance > 0:  # Avoid division by zero
+                    warnings_fatigue = (warnings_freq * warnings_diff * warnings_effort) / (warnings_importance)
+            except Exception as e:
+                print(f"Error calculating warnings fatigue: {e}")
+            
+            # Combine fatigue scores using simple sum
+            total_fatigue = (password_fatigue + mfa_fatigue + warnings_fatigue)/3 * familiarity_factor
+            
+            # Normalize to a 0-100 scal
+            max_possible_fatigue = 187.5
+            normalized_fatigue = min(100, (total_fatigue / max_possible_fatigue) * 100)
+            
+            return normalized_fatigue
+            
         except Exception as e:
-            print(f"Error predicting fatigue score: {e}")
-            return 0.0  # Return default value if prediction fails
+            print(f"Error computing fatigue score: {e}")
+            return 50.0  # Default moderate fatigue if calculation fails
 
     def _get_feature_values(self, config: np.ndarray) -> Dict[str, float]:
         """Get the actual feature values for a given configuration."""
@@ -211,7 +323,7 @@ class SecurityEnv(gym.Env):
         # Update configuration and compute scores
         config = action
         s_total = self._compute_security_score(config)
-        afs = self._predict_fatigue_score(config)
+        afs = self._compute_fatigue_score(config)
         
         # Compute reward
         reward = self.alpha * (s_total - self.s_min) - self.beta * afs
@@ -259,7 +371,7 @@ class SecurityEnv(gym.Env):
                 config[i] = self.np_random.integers(0, len(self.feature_ranges[feature_name]))
         
         s_total = self._compute_security_score(config)
-        afs = self._predict_fatigue_score(config)
+        afs = self._compute_fatigue_score(config)
         
         # Set initial state
         self.state = np.array(list(config) + [afs, s_total], dtype=np.float32)
@@ -294,7 +406,7 @@ class SecurityEnv(gym.Env):
             config[i] = min(user_config[i], max_index)
 
         s_total = self._compute_security_score(config)
-        afs = self._predict_fatigue_score(config)
+        afs = self._compute_fatigue_score(config)
 
         self.state = np.array(list(config) + [afs, s_total], dtype=np.float32)
 
@@ -322,5 +434,5 @@ class SecurityEnv(gym.Env):
 
     def close(self) -> None:
         """Clean up resources."""
-        pass 
+        pass
 
