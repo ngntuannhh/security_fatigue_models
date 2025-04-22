@@ -5,18 +5,19 @@ from stable_baselines3 import PPO
 
 from security_env import SecurityEnv
 
+path = r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model\best_model.zip"
+
 def suggest_config_for_user(user_config: np.ndarray,
-                            model_path: str = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\best_model\best_model.zip',
+                            model_path: str = path,
                             n_steps: int = 100):
     """
     1. Loads the pre-trained RL model (PPO).
-    2. Resets the SecurityEnv to the user's config.
+    2. Resets the SecurityEnv to the user's config. 
     3. Steps through the environment using the model's policy.
     4. Returns the final proposed configuration plus any info.
     """
     # Create the environment
     env = SecurityEnv(
-        rf_model_path="fatigue_model.joblib",
         alpha=0.7,  # or your chosen alpha
         beta=0.3,   # or your chosen beta
         s_min=5.0
@@ -30,7 +31,7 @@ def suggest_config_for_user(user_config: np.ndarray,
 
     final_obs = None
     for step in range(n_steps):
-        action, _states = model.predict(obs, deterministic=True)
+        action, _states = model.predict(obs, deterministic=False)
         obs, reward, done, truncated, info = env.step(action)
         final_obs = obs  # keep the latest state
         if done or truncated:
@@ -77,31 +78,29 @@ def suggest_config_for_user(user_config: np.ndarray,
 #     # Example user config: each number is the "index" for that feature 
 #     # in the environment's defined range
 #     example_user_config = np.array([
-#         1,  # Level of familiarity
-#         2,  # Frequency of Password Changes
-#         2,  # Difficulty Level
-#         2,  # Effort Required
-#         3,  # Perceived Importance
+#         1,  # Familarity
+#         1,  # Frequency of Password Changes
+#         1,  # Difficulty Level Password
+#         1,  # Effort Required Password
+#         1,  # Perceived Importance Password
+#         1,  # Password Uniqueness
 #         1,  # Frequency of MFA prompts
 #         1,  # Difficulty Level MFA
 #         1,  # Effort Required MFA
-#         3,  # Perceived Importance of MFA
+#         1,  # Perceived Importance of MFA
 #         1,  # Frequency of Security Warnings
 #         1,  # Difficulty Level Security Warnings
 #         1,  # Effort Required Security Warnings
-#         3,  # Perceived Importance of Security Warnings
-#         0,  # MFA - Auth app
-#         0,  # MFA - Biometric
-#         0,  # MFA - I do not use MFA
-#         1,  # MFA - OTP via SMS
-#         0,  # MFA - Security key
-#         1,  # Security Warnings - Antivirus
-#         0,  # Security Warnings - None
-#         1,  # Security Warnings - Phishing
-#         1,  # Security Warnings - System update
-#         0   # Security Warnings - Unauthorized access
+#         1,  # Perceived Importance of Security Warnings
+#         1,  # Warnings Response Behaviour
+#         0,  # Hardware security key (FIDO2 token) or cryptographic device
+#         0,  # On-device prompt or biometric
+#         0,  # OTP via authenticator app
+#         1,  # OTP via SMS/email
+#         0,  # Secondary email/phone or security questions
+#         0   # No MFA enabled
 #     ])
 
-#     suggestion_output = suggest_config_for_user(example_user_config, r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\best_model\best_model.zip', n_steps=10)
+#     suggestion_output = suggest_config_for_user(example_user_config, path)
 #     print("\nSuggestion Output:")
 #     print(suggestion_output)

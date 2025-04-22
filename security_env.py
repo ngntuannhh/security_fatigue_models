@@ -320,8 +320,68 @@ class SecurityEnv(gym.Env):
         """
         self.current_step += 1
         
+        # Make a copy of the action to avoid modifying the original
+        adjusted_action = action.copy()
+    
+        # Find indices of all MFA-related features
+        mfa_type_indices = []
+        no_mfa_index = None
+    
+        for i, name in enumerate(self.feature_names):
+            if name == 'No MFA enabled':
+                no_mfa_index = i
+            elif any(x in name for x in ['FIDO2', 'biometric', 'OTP', 'SMS', 'email', 'security questions']):
+                mfa_type_indices.append((i, name))
+    
+        # MFA Constraint Logic:
+        if no_mfa_index is not None:
+            if adjusted_action[no_mfa_index] == 1:
+                # If "No MFA enabled" is selected, disable all other MFA options
+                for idx, _ in mfa_type_indices:
+                    adjusted_action[idx] = 0
+            else:
+                # If "No MFA enabled" is not selected, ensure exactly one MFA option is enabled
+                
+                # Count how many MFA types are enabled
+                enabled_mfa_count = sum(adjusted_action[idx] == 1 for idx, _ in mfa_type_indices)
+                
+                if enabled_mfa_count == 0:
+                    # If none are enabled, enable the first one by default
+                    if mfa_type_indices:
+                        adjusted_action[mfa_type_indices[0][0]] = 1
+                elif enabled_mfa_count > 1:
+                    # If multiple are enabled, keep only the highest priority one
+                    # Find the first enabled MFA type (using the order defined in your feature names)
+                    enabled_indices = [(idx, name) for idx, name in mfa_type_indices if adjusted_action[idx] == 1]
+                    
+                    # Define MFA type priority (highest to lowest)
+                    mfa_priority = [
+                        'Hardware security key (FIDO2 token) or cryptographic device',
+                        'On-device prompt or biometric',
+                        'OTP via authenticator app',
+                        'OTP via SMS/email',
+                        'Secondary email/phone or security questions'
+                    ]
+                    
+                    # Find the highest priority enabled MFA type
+                    highest_priority_index = None
+                    highest_priority_rank = float('inf')
+                    
+                    for idx, name in enabled_indices:
+                        if name in mfa_priority:
+                            rank = mfa_priority.index(name)
+                            if rank < highest_priority_rank:
+                                highest_priority_rank = rank
+                                highest_priority_index = idx
+                    
+                    # Keep only the highest priority one enabled
+                    if highest_priority_index is not None:
+                        for idx, _ in mfa_type_indices:
+                            if idx != highest_priority_index:
+                                adjusted_action[idx] = 0
+
         # Update configuration and compute scores
-        config = action
+        config = adjusted_action
         s_total = self._compute_security_score(config)
         afs = self._compute_fatigue_score(config)
         

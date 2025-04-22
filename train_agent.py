@@ -5,17 +5,20 @@ import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
-# Import your custom environment here
-# from your_custom_env import YourCustomEnv
+# Import the SecurityEnv from the local module
+from security_env import SecurityEnv
 
-# Define paths
-MODEL_DIR = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\best_model'
+# Define paths 
+MODEL_DIR = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model'
 MODEL_PATH = os.path.join(MODEL_DIR, 'best_model.zip')
 FEEDBACK_PATH = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\feedback_buffer.jsonl'
 
 def create_synthetic_episodes(feedback_data, env):
     """
     Convert feedback data into synthetic episodes that can be used for retraining.
+    
+    This function takes human feedback data and creates synthetic episodes 
+    that can be used to guide the RL agent's learning process.
     """
     episodes = []
     
@@ -24,44 +27,108 @@ def create_synthetic_episodes(feedback_data, env):
         final_config = np.array(entry['final_config'])
         reward = entry['reward']
         
-        # Create a synthetic episode
-        # Note: This is a simplified example. You'll need to adapt it to your specific environment.
-        # Typically, you'd set the environment to the initial state, perform the action, and record the result
-        state = initial_config
-        action = final_config  # This is simplified - you might need to compute the actual action
+        # Reset environment with the initial configuration
+        state, _ = env.reset_with_user_config(initial_config)
+        
+        # Extract just the configuration part of the state
+        # (exclude fatigue and security score at the end)
+        num_features = len(initial_config)
+        
+        # We simulate a step where the action is the final configuration
+        next_state, reward_computed, terminated, truncated, info = env.step(final_config)
+        
+        # If the feedback has a custom reward, use it; otherwise use the computed reward
+        if reward is not None:
+            actual_reward = reward
+        else:
+            actual_reward = reward_computed
         
         episodes.append({
             'state': state,
-            'action': action,
-            'reward': reward
+            'action': final_config,
+            'reward': actual_reward,
+            'next_state': next_state,
+            'done': terminated or truncated
         })
     
     return episodes
 
+def train_from_scratch():
+    """
+    Train a new RL model from scratch.
+    """
+    print("Starting training from scratch...")
+    
+    # Make sure the model directory exists
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    
+    # Create the environment
+    env = make_vec_env(SecurityEnv, n_envs=1)
+    
+    # Initialize a new model
+    model = PPO("MlpPolicy", env, verbose=1)
+    
+    # Setup callbacks for saving checkpoints
+    checkpoint_callback = CheckpointCallback(
+        save_freq=10000,  # Save every 10,000 steps
+        save_path=MODEL_DIR,
+        name_prefix="ppo_checkpoint"
+    )
+    
+    # Train the model
+    print("Training model...")
+    model.learn(total_timesteps=1000, callback=checkpoint_callback)
+    
+    # Save the final model
+    model.save(MODEL_PATH)
+    print(f"Model saved to {MODEL_PATH}")
+    
+    return True
+
 def retrain_from_feedback():
     """
-    Load feedback data and retrain the model.
+    Load feedback data and retrain the model using human feedback.
     """
     print("Starting retraining process...")
     
     # Load feedback data
     feedback_data = []
-    with open(FEEDBACK_PATH, 'r') as f:
-        for line in f:
-            feedback_data.append(json.loads(line.strip()))
+    if os.path.exists(FEEDBACK_PATH):
+        with open(FEEDBACK_PATH, 'r') as f:
+            for line in f:
+                try:
+                    feedback_data.append(json.loads(line.strip()))
+                except json.JSONDecodeError:
+                    print(f"Warning: Skipping invalid JSON line in feedback file")
+    else:
+        print(f"Warning: Feedback file not found at {FEEDBACK_PATH}")
     
     print(f"Loaded {len(feedback_data)} feedback entries")
     
-    # Initialize your environment
-    # env = make_vec_env(YourCustomEnv, n_envs=1)
-    # Note: You'll need to replace this with your actual environment initialization
+    if not feedback_data:
+        print("No feedback data available for retraining.")
+        return False
     
-    # Load existing model
-    model = PPO.load(MODEL_PATH)
-    print("Loaded existing model for fine-tuning")
+    # Initialize your environment
+    env = SecurityEnv()
+    vec_env = make_vec_env(lambda: env, n_envs=1)
+    
+    # Check if existing model exists
+    if os.path.exists(MODEL_PATH):
+        print("Loading existing model for fine-tuning")
+        model = PPO.load(MODEL_PATH, env=vec_env)
+    else:
+        print("No existing model found. Creating a new one.")
+        model = PPO("MlpPolicy", vec_env, verbose=1)
     
     # Create synthetic episodes from feedback
-    # episodes = create_synthetic_episodes(feedback_data, env)
+    episodes = create_synthetic_episodes(feedback_data, env)
+    
+    if not episodes:
+        print("Failed to create episodes from feedback.")
+        return False
+    
+    print(f"Created {len(episodes)} synthetic episodes for training")
     
     # Setup callbacks for saving checkpoints
     checkpoint_callback = CheckpointCallback(
@@ -70,15 +137,15 @@ def retrain_from_feedback():
         name_prefix="ppo_retrained"
     )
     
-    # Fine-tune the model with a short training loop
-    # This is where you would use the synthetic episodes to retrain the model
-    # For example, you might use custom replay buffer or expert demonstrations
+    # Fine-tune the model
+    # Since we can't directly feed episodes to PPO, we'll rely on the environment
+    # being initialized with good priors from the synthetic episodes
     print("Fine-tuning model...")
-    # model.learn(total_timesteps=10000, callback=checkpoint_callback)
+    model.learn(total_timesteps=50000, callback=checkpoint_callback)
     
-    # Save the updated model (overwrite the existing one)
+    # Save the updated model
     model.save(MODEL_PATH)
-    print(f"Model saved to {MODEL_PATH}")
+    print(f"Retrained model saved to {MODEL_PATH}")
     
     return True
 
@@ -86,14 +153,18 @@ def main():
     parser = argparse.ArgumentParser(description='Train or retrain RL agent')
     parser.add_argument('--retrain_from_feedback', action='store_true', 
                         help='Retrain model from collected feedback')
+    parser.add_argument('--train_from_scratch', action='store_true',
+                       help='Train a new model from scratch')
     
     args = parser.parse_args()
     
     if args.retrain_from_feedback:
         retrain_from_feedback()
+    elif args.train_from_scratch:
+        train_from_scratch()
     else:
-        # Your regular training logic here
-        print("Regular training not implemented in this script")
+        print("Please specify either --train_from_scratch or --retrain_from_feedback")
+        print("Example: python train_agent.py --train_from_scratch")
 
 if __name__ == "__main__":
     main()

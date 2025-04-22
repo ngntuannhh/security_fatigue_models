@@ -33,8 +33,10 @@ def suggest():
         # Convert to NumPy array
         config_vector = np.array(config_vector)
 
+        #DRL Model Path
+        path = r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model\best_model.zip"
         # Get model suggestion
-        suggestion = suggest_config_for_user(config_vector, r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\best_model\best_model.zip', 10)
+        suggestion = suggest_config_for_user(config_vector, path, 100)
         
         # Convert NumPy types to JSON serializable Python types
         serializable_suggestion = convert_to_serializable(suggestion)
