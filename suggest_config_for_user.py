@@ -1,11 +1,19 @@
+import os
 import numpy as np
 import gymnasium as gym
-
 from stable_baselines3 import PPO
-
 from security_env import SecurityEnv
 
-path = r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model\best_model.zip"
+model_version = 'run_tuned_1m' # or your chosen model version
+
+# Get the directory containing this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+model_dir = os.path.join(script_dir, 'models')
+path = os.path.join(model_dir, model_version, 'best_model', 'best_model.zip')
+
+# path = os.path.join(script_dir, 'models', 'run_default_20250421_212017', 'best_model', 'best_model.zip')
+
+# path = r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model\best_model.zip"
 
 def suggest_config_for_user(user_config: np.ndarray,
                             model_path: str = path,
@@ -28,7 +36,6 @@ def suggest_config_for_user(user_config: np.ndarray,
     # Reset environment to the user config
     obs, info = env.reset_with_user_config(user_config)
     
-
     final_obs = None
     for step in range(n_steps):
         action, _states = model.predict(obs, deterministic=False)
@@ -73,34 +80,3 @@ def suggest_config_for_user(user_config: np.ndarray,
         suggestion["feature_values"] = feature_values
     
     return suggestion
-
-# if __name__ == "__main__":
-#     # Example user config: each number is the "index" for that feature 
-#     # in the environment's defined range
-#     example_user_config = np.array([
-#         1,  # Familarity
-#         1,  # Frequency of Password Changes
-#         1,  # Difficulty Level Password
-#         1,  # Effort Required Password
-#         1,  # Perceived Importance Password
-#         1,  # Password Uniqueness
-#         1,  # Frequency of MFA prompts
-#         1,  # Difficulty Level MFA
-#         1,  # Effort Required MFA
-#         1,  # Perceived Importance of MFA
-#         1,  # Frequency of Security Warnings
-#         1,  # Difficulty Level Security Warnings
-#         1,  # Effort Required Security Warnings
-#         1,  # Perceived Importance of Security Warnings
-#         1,  # Warnings Response Behaviour
-#         0,  # Hardware security key (FIDO2 token) or cryptographic device
-#         0,  # On-device prompt or biometric
-#         0,  # OTP via authenticator app
-#         1,  # OTP via SMS/email
-#         0,  # Secondary email/phone or security questions
-#         0   # No MFA enabled
-#     ])
-
-#     suggestion_output = suggest_config_for_user(example_user_config, path)
-#     print("\nSuggestion Output:")
-#     print(suggestion_output)

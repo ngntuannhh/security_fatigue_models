@@ -7,6 +7,14 @@ from suggest_config_for_user import suggest_config_for_user  # Assuming this is 
 
 app = Flask(__name__)
 
+MODEL_VER = 'run_tuned_1m'  # or your chosen model version
+
+# Get the directory containing this script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "models", MODEL_VER, "best_model", "best_model.zip")
+FEEDBACK_FILE = os.path.join(BASE_DIR, "feedback_buffer.jsonl")
+TRAIN_SCRIPT = os.path.join(BASE_DIR, "train_agent.py")
+
 def convert_to_serializable(obj):
     """Convert NumPy types to Python native types for JSON serialization."""
     if isinstance(obj, np.ndarray):
@@ -34,7 +42,7 @@ def suggest():
         config_vector = np.array(config_vector)
 
         #DRL Model Path
-        path = r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model\best_model.zip"
+        path = MODEL_PATH
         # Get model suggestion
         suggestion = suggest_config_for_user(config_vector, path, 100)
         
@@ -58,8 +66,8 @@ def retrain():
             return "ERROR", 400
         
         # Define the feedback file path
-        feedback_file = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\feedback_buffer.jsonl'
-        
+        feedback_file = FEEDBACK_FILE
+
         # Save the feedback data to a JSONL file
         with open(feedback_file, 'w') as f:
             for entry in feedback_data:
@@ -67,7 +75,9 @@ def retrain():
         
         # Use Popen to run the training in the background
         subprocess.Popen(["python", 
-                       r"C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\train_agent.py", 
+                       TRAIN_SCRIPT, 
+                          "--feedback_file", feedback_file, 
+                          "--model_path", MODEL_PATH,
                        "--retrain_from_feedback"], 
                       shell=True, 
                       creationflags=subprocess.CREATE_NO_WINDOW)

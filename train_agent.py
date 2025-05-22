@@ -5,13 +5,16 @@ import os
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
-# Import the SecurityEnv from the local module
 from security_env import SecurityEnv
 
-# Define paths 
-MODEL_DIR = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\models\run_default_20250421_212017\best_model'
-MODEL_PATH = os.path.join(MODEL_DIR, 'best_model.zip')
-FEEDBACK_PATH = r'C:\Users\Tuan Anh HSLU\OneDrive - Hochschule Luzern\Desktop\HSLU22\Bachelor Thesis\ML Models\feedback_buffer.jsonl'
+# Define paths
+script_dir = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(script_dir, 'models')
+
+MODEL_VER = 'run_tuned_1m'  # or your chosen model version
+
+MODEL_PATH = os.path.join(MODEL_DIR, MODEL_VER, 'best_model', 'best_model.zip')
+FEEDBACK_PATH = os.path.join(script_dir, 'feedback_buffer.jsonl')
 
 def create_synthetic_episodes(feedback_data, env):
     """
@@ -141,7 +144,7 @@ def retrain_from_feedback():
     # Since we can't directly feed episodes to PPO, we'll rely on the environment
     # being initialized with good priors from the synthetic episodes
     print("Fine-tuning model...")
-    model.learn(total_timesteps=50000, callback=checkpoint_callback)
+    model.learn(total_timesteps=10, callback=checkpoint_callback)
     
     # Save the updated model
     model.save(MODEL_PATH)
