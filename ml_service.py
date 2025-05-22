@@ -3,6 +3,7 @@ import numpy as np
 import subprocess
 import json
 import os
+import sys
 from suggest_config_for_user import suggest_config_for_user  # Assuming this is your model function
 
 app = Flask(__name__)
@@ -72,18 +73,34 @@ def retrain():
         with open(feedback_file, 'w') as f:
             for entry in feedback_data:
                 f.write(json.dumps(entry) + '\n')
+    
+        print("About to run retraining process directly")
         
-        # Use Popen to run the training in the background
-        subprocess.Popen(["python", 
-                       TRAIN_SCRIPT, 
-                          "--feedback_file", feedback_file, 
-                          "--model_path", MODEL_PATH,
-                       "--retrain_from_feedback"], 
-                      shell=True, 
-                      creationflags=subprocess.CREATE_NO_WINDOW)
+        # Import the retrain function directly
+        from train_agent import retrain_from_feedback1
         
-        # Return a simple "OK" response
-        return "OK", 200
+        # Call it directly in the same process
+        success = retrain_from_feedback1()
+        
+        if success:
+            print("Retraining completed successfully")
+            return "OK", 200
+        else:
+            print("Retraining failed")
+            return "ERROR", 500
+        
+
+        # # # Use Popen to run the training in the background
+        # # subprocess.Popen(["python", 
+        # #                TRAIN_SCRIPT, 
+        # #                   "--feedback_file", feedback_file, 
+        # #                   "--model_path", MODEL_PATH,
+        # #                "--retrain_from_feedback1"], 
+        # #               shell=True, 
+        # #               creationflags=subprocess.CREATE_NO_WINDOW)
+        
+        # # Return a simple "OK" response
+        # return "OK", 200
             
     except Exception as e:
         print(f"Error in retraining endpoint: {e}")
