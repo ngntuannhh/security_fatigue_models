@@ -77,10 +77,10 @@ def retrain():
         print("About to run retraining process directly")
         
         # Import the retrain function directly
-        from train_agent import retrain_from_feedback1
+        from train_agent import retrain_from_feedback
         
         # Call it directly in the same process
-        success = retrain_from_feedback1()
+        success = retrain_from_feedback()
         
         if success:
             print("Retraining completed successfully")
