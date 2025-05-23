@@ -25,7 +25,7 @@ def convert_to_serializable(obj):
     elif isinstance(obj, dict):
         return {k: convert_to_serializable(v) for k, v in obj.items()}
     elif isinstance(obj, list):
-        return [convert_to_serializable(i) for i in obj]
+        return [convert_to_serializable(i) for i in obj] 
     else:
         return obj
 
